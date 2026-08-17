@@ -5,7 +5,6 @@ course. A cargo workspace:
 
 - [Student course book](https://petelevasseur.com/guiding-rust/)
 - [Training resources](https://petelevasseur.com/training/)
-- Workshop snapshot: `workshop-2026-08-19`
 
 Use this repository as a GitHub template for your pair, or clone it directly.
 The full workspace is intentionally incomplete until you define the
