@@ -1,0 +1,12 @@
+[package]
+name = "guardian"
+version = "0.1.0"
+edition = "2021"
+description = "Forward-collision warning arbiter. Skeleton yours; verdicts statistical."
+
+[dependencies]
+sensor-sim = { path = "../sensor-sim" }
+
+[dev-dependencies]
+proptest = "1"
+feotest = "0.2"

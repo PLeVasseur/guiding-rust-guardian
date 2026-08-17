@@ -1,0 +1,5 @@
+# Rust 1.89.0, installed automatically by rustup on the first cargo
+# command in this repository.
+[toolchain]
+channel = "1.89.0"
+components = ["rustfmt", "clippy"]

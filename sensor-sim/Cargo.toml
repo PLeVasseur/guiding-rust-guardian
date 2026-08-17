@@ -1,0 +1,8 @@
+[package]
+name = "sensor-sim"
+version = "0.1.0"
+edition = "2021"
+description = "Scripted, noisy 20 Hz track-report simulator for Project C: guardian."
+
+[dependencies]
+rand = "0.8"

@@ -1,0 +1,9 @@
+[package]
+name = "runner"
+version = "0.1.0"
+edition = "2021"
+description = "Scenario runner: drives sensor-sim through guardian, reports metrics."
+
+[dependencies]
+sensor-sim = { path = "../sensor-sim" }
+guardian = { path = "../guardian" }
