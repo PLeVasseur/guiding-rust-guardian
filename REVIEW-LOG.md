@@ -21,8 +21,21 @@ Pair: _______ / _______
 | Agent's first |               |                |                   |
 | Final         |               |                |                   |
 
-## Statistical verdicts (one row per acceptance-table row)
+## Measured behavior (baseline and final)
 
-| Contract | Samples | Threshold | threshold_origin | Confidence rationale |
-|----------|---------|-----------|------------------|----------------------|
-|          |         |           |                  |                      |
+| Version | Trials | Brake rate | Empty-road false alarms | Warn/brake latency | Chatter | Replay seed inspected |
+| --- | --- | --- | --- | --- | --- | --- |
+| First working pass | | | | | | |
+| After revision | | | | | | |
+
+## Claim status
+
+| Claim | Example/property/metric evidence | Measured only or statistically supported? | Gap |
+| --- | --- | --- | --- |
+| | | | |
+
+## After-workshop statistical verdicts
+
+| Contract | Samples | Threshold | threshold origin | Confidence rationale |
+| --- | --- | --- | --- | --- |
+| | | | | |

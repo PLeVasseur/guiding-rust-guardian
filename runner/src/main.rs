@@ -1,90 +1,67 @@
-//! Scenario runner scaffold.
+//! Prepared scenario runner for the three-hour Project C route.
 //!
-//! Compiles after the participant-owned `ParticipantArbiter` skeleton exists:
-//! it drives `sensor-sim` and prints a per-cycle trace. Wire your arbiter in at
-//! the marked line, then grow the metrics section toward the acceptance table. The
-//! table is defined over many runs; a single run shows very little.
+//! The runner owns mechanical trial loops and metric definitions. Students own
+//! `guardian::ParticipantArbiter`, its policy, and the evidence that the policy
+//! supports. Read `metrics.rs` before trusting the numbers.
 
-use guardian::{Arbiter, Decision};
+mod metrics;
+
+use guardian::{Arbiter, ParticipantArbiter};
 use sensor_sim::{Scenario, Sim, SimConfig};
 
-fn parse_scenario(s: &str) -> Option<Scenario> {
-    match s {
-        "hard-braking" => Some(Scenario::HardBrakingLead),
-        "cut-in" => Some(Scenario::CutIn),
-        "constant-lead" => Some(Scenario::ConstantLead),
-        "empty-road" => Some(Scenario::EmptyRoad),
-        _ => None,
+fn parse_scenario(value: &str) -> Result<Scenario, String> {
+    match value {
+        "hard-braking" => Ok(Scenario::HardBrakingLead),
+        "cut-in" => Ok(Scenario::CutIn),
+        "constant-lead" => Ok(Scenario::ConstantLead),
+        "empty-road" => Ok(Scenario::EmptyRoad),
+        _ => Err(format!("unknown scenario: {value}")),
     }
 }
 
-fn main() {
-    // trace [--scenario NAME] [--seed N]   deterministic single run
-    // metrics --trials N                   participant work: see below
-    let mut args = std::env::args().skip(1);
+fn trace(mut args: impl Iterator<Item = String>) -> Result<(), String> {
     let mut scenario = Scenario::HardBrakingLead;
-    let mut seed: Option<u64> = None;
-    let mut mode_metrics = false;
-    while let Some(a) = args.next() {
-        match a.as_str() {
-            "trace" => {}
-            "metrics" => mode_metrics = true,
+    let mut seed = 3_007u64;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
             "--scenario" => {
-                let v = args.next().expect("--scenario takes a name");
-                scenario = parse_scenario(&v).expect("unknown scenario");
+                scenario = parse_scenario(
+                    &args
+                        .next()
+                        .ok_or_else(|| "--scenario takes a name".to_string())?,
+                )?;
             }
             "--seed" => {
-                seed = Some(
-                    args.next()
-                        .and_then(|v| v.parse().ok())
-                        .expect("--seed takes an integer"),
-                );
+                seed = args
+                    .next()
+                    .ok_or_else(|| "--seed takes an integer".to_string())?
+                    .parse()
+                    .map_err(|_| "--seed takes an integer".to_string())?;
             }
-            "--trials" => {
-                let _ = args.next();
-            }
-            other => {
-                eprintln!("unknown argument: {other}");
-                std::process::exit(2);
-            }
+            _ => return Err(format!("unknown trace argument: {arg}")),
         }
     }
-    if mode_metrics {
-        // Participant work. The acceptance table is defined over many
-        // runs; your metrics must print, for every failing run, the
-        // scenario name and seed, so any failure replays exactly with:
-        //   runner trace --scenario NAME --seed N
-        eprintln!("metrics: not implemented yet (this is your work)");
-        std::process::exit(2);
-    }
-    let cfg = SimConfig {
-        seed,
-        ..SimConfig::default()
-    };
-    let sim = Sim::new(scenario, cfg);
 
-    println!(
-        "# scenario: {scenario:?}  seed: {seed:?}  (cycle dt = {} s)",
-        sensor_sim::CYCLE_DT_S
+    let sim = Sim::new(
+        scenario,
+        SimConfig {
+            seed: Some(seed),
+            ..SimConfig::default()
+        },
     );
-    println!("# cycle  time_s  radar  camera  min_range_m  decision");
+    let mut arbiter = make_default::<ParticipantArbiter>();
 
-    let mut final_decision = Decision::NoAction;
-    // Keep this adapter stable so the same runner and independent evaluator can
-    // exercise every participant design.
-    let mut arbiter = guardian::ParticipantArbiter::default();
+    println!("# scenario: {scenario:?}  seed: {seed}");
+    println!("# cycle  time_s  radar  camera  min_range_m  decision");
     for (cycle, reports) in sim.enumerate() {
+        let decision = arbiter.decide(&reports);
         let min_range = reports
             .iter()
-            .map(|r| r.range_m)
+            .map(|report| report.range_m)
             .fold(f64::INFINITY, f64::min);
-
-        let decision = arbiter.decide(&reports);
-
-        final_decision = final_decision.max(decision);
         let radar = reports
             .iter()
-            .filter(|r| r.sensor == sensor_sim::Sensor::Radar)
+            .filter(|report| report.sensor == sensor_sim::Sensor::Radar)
             .count();
         let camera = reports.len() - radar;
         println!(
@@ -97,6 +74,60 @@ fn main() {
             },
         );
     }
-    println!("# most severe decision this run: {final_decision:?}");
-    println!("# (metrics are computed over many runs; see the SPEC.md acceptance table)");
+    Ok(())
+}
+
+fn make_default<T: Default>() -> T {
+    T::default()
+}
+
+fn measure(mut args: impl Iterator<Item = String>) -> Result<bool, String> {
+    let mut trials = 200u64;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--trials" => {
+                trials = args
+                    .next()
+                    .ok_or_else(|| "--trials takes a positive integer".to_string())?
+                    .parse()
+                    .map_err(|_| "--trials takes a positive integer".to_string())?;
+                if trials == 0 {
+                    return Err("--trials must be greater than zero".to_string());
+                }
+            }
+            _ => return Err(format!("unknown metrics argument: {arg}")),
+        }
+    }
+
+    let report = metrics::evaluate::<ParticipantArbiter>(trials);
+    report.print();
+    Ok(report.meets_targets())
+}
+
+fn usage() {
+    eprintln!(
+        "usage:\n  runner trace [--scenario hard-braking|cut-in|constant-lead|empty-road] [--seed N]\n  runner metrics [--trials N]"
+    );
+}
+
+fn main() {
+    let mut args = std::env::args().skip(1);
+    let result = match args.next().as_deref() {
+        Some("trace") => trace(args).map(|()| true),
+        Some("metrics") => measure(args),
+        _ => {
+            usage();
+            std::process::exit(2);
+        }
+    };
+
+    match result {
+        Ok(true) => {}
+        Ok(false) => std::process::exit(1),
+        Err(message) => {
+            eprintln!("error: {message}");
+            usage();
+            std::process::exit(2);
+        }
+    }
 }

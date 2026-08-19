@@ -19,10 +19,29 @@ before that milestone.
   provided as shared vocabulary. Implement the small `Arbiter` adapter with a
   concrete `ParticipantArbiter`; the internal design remains yours. `proptest`
   and `feotest` are in dev-dependencies, pinned in the lockfile.
-- `runner/`: compiles after `ParticipantArbiter` exists. It uses the stable
-  adapter and grows the metrics from there.
+- `runner/`: a prepared, reviewable trace and multi-seed metrics harness. It
+  compiles after `ParticipantArbiter` exists. Students review the metric
+  semantics instead of spending the workshop on trial-loop plumbing.
 
 As the spec says, the last deliverable is a test suite you would stake
 the release on.
 
 `SAFETY-NOTES.md` is the safety-argument sketch, a deliverable.
+
+## Three-hour route
+
+After creating `ParticipantArbiter`, use short batches while revising and a
+larger final batch:
+
+```text
+cargo run --release -p runner -- trace --scenario cut-in --seed 3007
+cargo run --release -p runner -- metrics --trials 200
+cargo run --release -p runner -- metrics --trials 1000
+```
+
+The metrics command exits nonzero while product targets are unmet. That is an
+expected baseline result, not a broken starter. Replay at least one reported
+seed before changing the policy.
+
+Formal confidence bounds with `feotest`, protocol-grid work, mutation testing,
+and proofs remain available as after-workshop extensions.
