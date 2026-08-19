@@ -8,8 +8,7 @@ course. A cargo workspace:
 
 Use this repository as a GitHub template for your pair, or clone it directly.
 The full workspace is intentionally incomplete until you define the
-participant-owned `ParticipantArbiter` skeleton. Root CI is expected to be red
-before that milestone.
+participant-owned `ParticipantArbiter` skeleton.
 
 - `sensor-sim/`: provided, complete, and tested. Scripted scenarios at
   20 Hz with Gaussian noise, dropouts, and ghost tracks. Seedable. Read
@@ -27,6 +26,11 @@ As the spec says, the last deliverable is a test suite you would stake
 the release on.
 
 `SAFETY-NOTES.md` is the safety-argument sketch, a deliverable.
+
+The template's CI temporarily injects a no-op adapter only when
+`ParticipantArbiter` is absent, so the provided simulator and runner tests stay
+verifiable. The adapter is not committed. As soon as your skeleton defines
+`ParticipantArbiter`, CI uses your implementation instead.
 
 ## Three-hour route
 

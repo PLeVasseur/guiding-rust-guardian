@@ -6,6 +6,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup show   # installs the toolchain pinned in rust-toolchain.toml
+      - name: Verify provided code before the participant skeleton exists
+        run: |
+          if ! grep -Rqs 'ParticipantArbiter' guardian/src; then
+            printf '%s\n' \
+              '' \
+              '#[derive(Default)]' \
+              'pub struct ParticipantArbiter;' \
+              '' \
+              'impl Arbiter for ParticipantArbiter {' \
+              '    fn decide(&mut self, _reports: &[sensor_sim::TrackReport]) -> Decision {' \
+              '        Decision::NoAction' \
+              '    }' \
+              '}' >> guardian/src/lib.rs
+          fi
       - run: cargo fmt --all --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace --all-targets
